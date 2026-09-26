@@ -1,50 +1,84 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# ゲーム募集掲示板 Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. 仕様を先に決定・更新する
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Spec-Driven Developmentに基づき、各機能の目的、振る舞い、制約、受け入れ条件を
+仕様として決定してから設計・実装に進むこと。
+仕様を変更する場合は、実装を変更する前に仕様を更新すること。
+実装中に仕様の不足や矛盾を発見した場合も、仕様を明確にしてから関連する実装を進めること。
+仕様と実装の対応を確認できる状態を保ち、実装を根拠に仕様を事後決定しないこと。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Clean Architectureと内向きの依存関係
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Clean Architectureに基づき、ドメインのルールとユースケースを、画面・通信、
+フレームワーク、データベースなどの技術的詳細から分離すること。
+ソースコードの依存関係は外側の技術的詳細から内側のビジネスロジックへ向けること。
+内側のコードは、外側の具象クラスやフレームワーク固有の型に依存してはならない。
+外部機能が必要な場合は、内側が必要とする境界を定義し、外側で実装すること。
+これにより、ビジネスルールの検証や変更を特定の技術に拘束されずに行えるようにする。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. 責務の分離とシンプルな設計
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+各コンポーネントの責務を明確にし、入力の受け付け、ユースケースの実行、
+ビジネスルール、永続化の処理を混在させないこと。
+現在の仕様を満たす、シンプルで理解しやすい設計を優先すること。
+学習目的に照らし、将来の仮定だけを理由とする抽象化、汎用化、階層化を追加しないこと。
+境界や抽象化を追加する場合は、責務の分離、依存方向、テスト可能性、
+または現在の仕様上の必要性に基づいて理由を説明できること。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. テスト可能な機能設計
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+各機能は、受け入れ条件に対応する入力と結果をテストで確認できる形に設計すること。
+ビジネスロジックは、Webサーバーや実データベースの起動なしに検証できること。
+時刻や外部サービスなど結果を左右する依存は、必要な境界で差し替え可能にすること。
+機能の追加・変更では、正常系と関連する異常系を検証し、仕様との一致を確認すること。
+テストのためだけに不要な設計の複雑さを導入しないこと。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. ユーザー入力の検証
+
+ユーザー入力は信頼せず、サーバー側で検証してから処理すること。
+各入力に必要な必須条件、形式、長さ、範囲、許容値を仕様に定義すること。
+画面側の検証のみで入力を受け入れてはならない。
+形式上の検証は入力境界で行い、ビジネス上の制約はドメインまたはユースケースで保証すること。
+不正な入力では状態を変更せず、利用者が修正できるエラーを返すこと。
+検証のテストには、定義した制約の境界値と不正値を含めること。
+
+## プロジェクトの前提
+
+本プロジェクトは、Javaを使用したゲーム募集掲示板Webアプリケーションである。
+学習を目的とし、仕様、設計、実装の対応と依存関係を理解できる構成を維持すること。
+フレームワークやデータベースなどの技術選択は設計計画に記録し、
+採用する技術にかかわらず本憲章の原則を守ること。
+レイヤーの分離は責務と依存関係で実現し、不要な別モジュール化やサービス分割を行わないこと。
+
+## 開発手順とレビュー
+
+1. 機能仕様に目的、振る舞い、制約、受け入れ条件、入力検証の条件を記録する。
+2. 仕様に基づく設計計画で責務、依存方向、技術選択、検証方法を明確にする。
+3. 計画を実行可能なタスクに分解し、仕様に沿って実装・検証する。
+4. 仕様変更が必要になった場合は、仕様を先に更新し、関連する計画とタスクを整合させる。
+5. 変更のレビューでは、仕様との一致、内向きの依存関係、責務の分離、設計の簡潔さ、
+   テスト可能性、入力検証を確認する。個人開発では自己レビューとして実施する。
+
+変更を完了とする前に、関連するテストの結果とレビューで確認した内容を記録すること。
+原則に違反する設計・実装は修正してから完了とすること。
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+本憲章をプロジェクトの仕様、設計、実装、レビューにおける判断基準とする。
+関連文書や実装が本憲章と矛盾する場合は、本憲章に適合させること。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+憲章を改訂する場合は、変更理由、影響する原則、既存の仕様・設計・実装への影響と
+必要な対応を記録し、プロジェクト管理者のレビューを経て採用すること。
+個人開発では管理者自身がレビューと採用判断を行う。
+原則を変更する必要がある場合は、関連する実装に先立って憲章を改訂すること。
+
+バージョンはMAJOR.MINOR.PATCHで管理する。
+互換性のない原則の削除・再定義はMAJOR、原則や節の追加・実質的な拡張はMINOR、
+意味を変えない表現の明確化や誤記修正はPATCHを更新すること。
+改訂時は最終改訂日を更新し、制定日は保持すること。
+各変更のレビューで本憲章への適合を確認し、改訂時には関連する仕様と設計計画への影響も確認すること。
+
+**Version**: 1.0.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
