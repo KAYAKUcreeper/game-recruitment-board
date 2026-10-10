@@ -1,6 +1,6 @@
 # 初版の仕様一覧
 
-更新日: 2026-10-03
+更新日: 2026-10-10
 
 | 仕様 | 責務 | 依存 |
 | --- | --- | --- |
@@ -10,10 +10,10 @@
 仕様を実装順に整理し、001をアカウント、002を掲示板とする。
 アカウントから計画し、続いて掲示板を計画する。各ディレクトリでplan.mdとtasks.mdを管理する。
 API契約はルートの `schema/auth/openapi.yaml` と `schema/game-recruitment/openapi.yaml` に集約する。
-アカウント契約は作成済み。掲示板契約は次の設計段階で作成する。
+アカウント契約は作成済み。掲示板契約も設計段階で作成済み。実装は未着手。
 機能ごとのcontracts/には中央の契約への参照を置き、Spec Kitの後続処理で参照できるようにする。
-現在のSpec Kit対象は `.specify/feature.json` により `specs/001-auth` に設定する。
-掲示板を計画する際は対象を `specs/002-game-recruitment` に切り替える。
+現在のSpec Kit対象は `.specify/feature.json` により `specs/002-game-recruitment` に設定する。
+掲示板の設計ブランチは `plan-game-recruitment`。認証は `implement-auth` で実装・検証済み。
 
 ## 重複を避けるルール
 

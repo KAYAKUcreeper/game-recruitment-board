@@ -82,3 +82,10 @@ Java側のビルドツールはMavenを使用する（ユーザー合意）。
 
 OpenAPI採用だけを理由に、アプリを別サービスへ分割したり、
 APIコードの自動生成を必須にしたりしない。
+
+
+## 掲示板設計への具体化（2026-10-10）
+
+[plan.md](plan.md)、[data-model.md](data-model.md)、[API契約](../../schema/game-recruitment/openapi.yaml)に上記の判断を具体化した。
+掲示板にも既存authと同じOpenAPI Generator 7.26.0を別execution/別packageで使用する。これはユーザー指定のJavaコード生成学習を引き継ぐ判断であり、OpenAPI一般の必須条件ではない。
+固定バージョンは実装済みauthの構成を継続。既存認証フィルター・エラー境界・テスト初期化の拡張は掲示板実装のタスクに含める。

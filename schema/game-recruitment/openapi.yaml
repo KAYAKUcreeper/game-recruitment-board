@@ -1,0 +1,1074 @@
+openapi: 3.1.1
+info:
+  title: Game Recruitment Board — Recruitment API
+  version: 1.0.0
+  description: '掲示板FR-004〜024の契約。全応答Cache-Control: no-store。文字数はUnicodeコードポイント。公開JSONに合流情報を含めない。本人IDは認証Cookieから決める。全POSTは認証/CSRF
+    Cookie/raw header/Origin確認。失敗で状態変更しない。時刻・人数・権限は処理待機後の最終条件判定時点で評価し、成功はcommit後。認証/CSRF取得はschema/auth/openapi.yaml。'
+servers:
+- url: /api
+  description: 同一オリジン。開発はReact proxy、公開はHTTPS。
+tags:
+- name: Games
+- name: Recruitments
+- name: Participation
+- name: MeetingInfo
+- name: MyRecruitments
+security: []
+paths:
+  /games:
+    get:
+      tags:
+      - Games
+      operationId: listGames
+      summary: ゲーム一覧を取得する
+      description: 固定の3値。不正認証Cookieでも公開閲覧可能。
+      security: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameList'
+              example:
+                items:
+                - code: VALORANT
+                  name: VALORANT
+                - code: APEX_LEGENDS
+                  name: Apex Legends
+                - code: OVERWATCH
+                  name: Overwatch
+        '405':
+          $ref: '#/components/responses/Error405'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /recruitments:
+    get:
+      tags:
+      - Recruitments
+      operationId: listRecruitments
+      summary: 受付中の募集を探す
+      description: OPENのみ。startsAt/createdAt/id昇順。game省略なら全ゲーム。20件固定、別ページは別時点の最新一覧。合流情報なし。
+      security: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentPage'
+              example:
+                items:
+                - &id005
+                  id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                  game: VALORANT
+                  title: 一緒に遊ぶ仲間を募集
+                  startsAt: '2026-11-01T11:00:00Z'
+                  capacity: 3
+                  participantCount: 0
+                  state: OPEN
+                  organizer: &id001
+                    id: c31568e5-1234-4ec7-9819-6653ac03de51
+                    displayName: もち
+                page: 1
+                pageSize: 20
+                hasNext: false
+        '400':
+          $ref: '#/components/responses/Error400'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+      - name: game
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/GameCode'
+      - &id006
+        $ref: '#/components/parameters/Page'
+    post:
+      tags:
+      - Recruitments
+      operationId: createRecruitment
+      summary: 募集を作成する
+      description: 本人はJWTから決め、organizerIdを入力させない。成立の最終判定時点より未来、開始人数0。公開後の本文編集・削除は不可。任意の合流情報だけ非公開で保存。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '201':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Location:
+              description: 作成した公開詳細のURI。
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example: &id002
+                id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                game: VALORANT
+                title: 一緒に遊ぶ仲間を募集
+                startsAt: '2026-11-01T11:00:00Z'
+                capacity: 3
+                participantCount: 0
+                state: OPEN
+                organizer: *id001
+                description: '初心者歓迎です。
+
+                  楽しく遊びましょう。'
+                participants: &id004 []
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecruitmentRequest'
+            example:
+              game: VALORANT
+              title: 一緒に遊ぶ仲間を募集
+              description: 初心者歓迎です。
+              startsAt: '2026-11-01T20:00:00+09:00'
+              capacity: 3
+              meetingInfo: ゲーム内で募集者へ連絡してください。
+  /recruitments/{recruitmentId}:
+    get:
+      tags:
+      - Recruitments
+      operationId: getRecruitment
+      summary: 募集の公開詳細を見る
+      description: 全状態で公開部分を取得可能。不正JWTも公開閲覧を妨げない。合流情報のキーは含めない。participants配列長とparticipantCountが一致。
+      security: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example: *id002
+        '400':
+          $ref: '#/components/responses/Error400'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: &id003
+      - $ref: '#/components/parameters/RecruitmentId'
+  /recruitments/{recruitmentId}/participations/me:
+    post:
+      tags:
+      - Participation
+      operationId: joinRecruitment
+      summary: 募集に即時参加する
+      description: 本人はJWT。募集者以外・未参加・OPENだけ。親行ロック後の最新人数/時刻で確認。同時参加で定員超過させない。重複参加409 ALREADY_PARTICIPATING、自分の募集409
+        OWN_RECRUITMENT。本文不要。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '201':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example:
+                id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                game: VALORANT
+                title: 一緒に遊ぶ仲間を募集
+                startsAt: '2026-11-01T11:00:00Z'
+                capacity: 3
+                participantCount: 1
+                state: OPEN
+                organizer: *id001
+                description: '初心者歓迎です。
+
+                  楽しく遊びましょう。'
+                participants:
+                - id: 362b0a87-eef4-4d29-b2c0-bd1f1f7b6f21
+                  displayName: 参加者
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+  /recruitments/{recruitmentId}/participations/me/cancel:
+    post:
+      tags:
+      - Participation
+      operationId: cancelParticipation
+      summary: 自分の参加を取り消す
+      description: 参加者本人、開始前。FULL/manual/cancelledも可。本人行だけ削除、manual/cancelledは解除しない。未参加/重複キャンセル409 NOT_PARTICIPATING、開始後409
+        RECRUITMENT_STARTED。本文不要。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '200':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example: *id002
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+  /recruitments/{recruitmentId}/close:
+    post:
+      tags:
+      - Recruitments
+      operationId: closeRecruitment
+      summary: 募集を締め切る
+      description: 募集者だけ、開始前・中止前。FULLでも手動締め切りにする。既にmanualでも200。キャンセルで空きが出ても自動再開しない。本文不要。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '200':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example:
+                id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                game: VALORANT
+                title: 一緒に遊ぶ仲間を募集
+                startsAt: '2026-11-01T11:00:00Z'
+                capacity: 3
+                participantCount: 0
+                state: MANUALLY_CLOSED
+                organizer: *id001
+                description: '初心者歓迎です。
+
+                  楽しく遊びましょう。'
+                participants: *id004
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+  /recruitments/{recruitmentId}/reopen:
+    post:
+      tags:
+      - Recruitments
+      operationId: reopenRecruitment
+      summary: 募集を再開する
+      description: 募集者だけ、開始前・中止前、manualClosedで空きあり。FULLならRECRUITMENT_FULL、manualでなければNOT_MANUALLY_CLOSEDの409。本文不要。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '200':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example:
+                id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                game: VALORANT
+                title: 一緒に遊ぶ仲間を募集
+                startsAt: '2026-11-01T11:00:00Z'
+                capacity: 3
+                participantCount: 0
+                state: OPEN
+                organizer: *id001
+                description: '初心者歓迎です。
+
+                  楽しく遊びましょう。'
+                participants: *id004
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+  /recruitments/{recruitmentId}/cancel:
+    post:
+      tags:
+      - Recruitments
+      operationId: cancelRecruitment
+      summary: 開催を中止する
+      description: 募集者だけ、開始前・中止前。中止は取り消せず、参加履歴は維持。中止後は参加・再開・合流情報編集を拒否。参加者は開始前なら参加キャンセル可。本文不要。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '200':
+          description: 処理成功。保存commit後の公開詳細。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentDetail'
+              example:
+                id: 3584e0b4-829a-4fd9-8427-4b49347df785
+                game: VALORANT
+                title: 一緒に遊ぶ仲間を募集
+                startsAt: '2026-11-01T11:00:00Z'
+                capacity: 3
+                participantCount: 0
+                state: CANCELLED
+                organizer: *id001
+                description: '初心者歓迎です。
+
+                  楽しく遊びましょう。'
+                participants: *id004
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+  /recruitments/{recruitmentId}/meeting-info:
+    get:
+      tags:
+      - MeetingInfo
+      operationId: getMeetingInfo
+      summary: 合流情報を見る
+      description: 募集者は全状態で閲覧可。参加中の本人は開始前かつ中止前だけ（FULL/manual可）。未参加/キャンセル済み/参加者の開始後・中止後は403 MEETING_INFO_FORBIDDEN。未ログイン401。資格と内容を同一短期transactionで確認。未登録はregistered=false/text空文字。
+      security:
+      - AuthCookie: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingInfo'
+              example:
+                registered: false
+                text: ''
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+    post:
+      tags:
+      - MeetingInfo
+      operationId: updateMeetingInfo
+      summary: 合流情報を登録・更新する
+      description: 募集者だけ、開始前・中止前（FULL/manual可）。text最大1000コードポイント。空文字/White_Spaceだけなら未登録へ戻す。他の募集項目の変更を受け付けない。
+      security:
+      - AuthCookie: []
+        CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingInfo'
+              example:
+                registered: true
+                text: ゲーム内で募集者へ連絡してください。
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '415':
+          $ref: '#/components/responses/Error415'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters: *id003
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingInfoRequest'
+            example:
+              text: ゲーム内で募集者へ連絡してください。
+  /me/recruitments:
+    get:
+      tags:
+      - MyRecruitments
+      operationId: listMyRecruitments
+      summary: 自分の募集・参加予定を見る
+      description: kind=created/participating、period=upcoming/past。upcomingはstartsAt>now昇順、pastはstartsAt<=now降順。中止も日時区分に残し、キャンセル済み参加は除外。20件固定。本人IDはJWTから決める。
+      security:
+      - AuthCookie: []
+      responses:
+        '200':
+          description: 処理成功。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecruitmentPage'
+              example:
+                items:
+                - *id005
+                page: 1
+                pageSize: 20
+                hasNext: false
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '405':
+          $ref: '#/components/responses/Error405'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+      parameters:
+      - name: kind
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - created
+          - participating
+      - name: period
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - upcoming
+          - past
+      - *id006
+components:
+  securitySchemes:
+    AuthCookie:
+      type: apiKey
+      in: cookie
+      name: auth_token
+      description: 既存auth APIが発行する1時間有効JWT。署名/期限/失効/本人存在を毎回確認。HttpOnly、SameSite=Lax、Path=/api、通常Secure。
+    CsrfCookie:
+      type: apiKey
+      in: cookie
+      name: XSRF-TOKEN
+      description: GET /auth/csrfから取得。Path=/、通常Secure。認証用ではない。
+    CsrfHeader:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+      description: XSRF-TOKEN Cookieと同じraw値。Originがあれば許可Originと照合。
+  parameters:
+    RecruitmentId:
+      name: recruitmentId
+      in: path
+      required: true
+      schema: &id007
+        type: string
+        format: uuid
+      description: 募集のUUID。形式不正400、存在しない有効UUID404。
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 107374183
+        default: 1
+      description: 1始まり、20件固定。offsetのsigned32bit overflowを防ぐ。
+  schemas:
+    GameCode:
+      type: string
+      enum:
+      - VALORANT
+      - APEX_LEGENDS
+      - OVERWATCH
+    Game:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - name
+      properties:
+        code:
+          $ref: '#/components/schemas/GameCode'
+        name:
+          type: string
+          enum:
+          - VALORANT
+          - Apex Legends
+          - Overwatch
+    GameList:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+          minItems: 3
+          maxItems: 3
+    AccountProfile:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - displayName
+      properties:
+        id: *id007
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+    RecruitmentState:
+      type: string
+      enum:
+      - OPEN
+      - FULL
+      - MANUALLY_CLOSED
+      - CANCELLED
+      - STARTED
+      description: 中止→開始済み→手動締切→満員→受付中の優先順。
+    RecruitmentSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - game
+      - title
+      - startsAt
+      - capacity
+      - participantCount
+      - state
+      - organizer
+      properties:
+        id: *id007
+        game:
+          $ref: '#/components/schemas/GameCode'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+        startsAt:
+          type: string
+          format: date-time
+          description: UTCのZ形式で返す。画面はAsia/Tokyoで表示する。
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9
+        participantCount:
+          type: integer
+          minimum: 0
+          maximum: 9
+        state:
+          $ref: '#/components/schemas/RecruitmentState'
+        organizer:
+          $ref: '#/components/schemas/AccountProfile'
+    CreateRecruitmentRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - game
+      - title
+      - description
+      - startsAt
+      - capacity
+      properties:
+        game:
+          $ref: '#/components/schemas/GameCode'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+        startsAt:
+          type: string
+          format: date-time
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00(?:Z|[+-]\d{2}:\d{2})$
+          description: 実在するoffset付きRFC3339。秒/小数秒0、成立判定時点より未来。画面はJST入力に+09:00を付ける。
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9
+          description: 募集者を除く追加参加者数。文字列・小数から暗黙変換しない。
+        meetingInfo:
+          type: string
+          minLength: 0
+          maxLength: 1000
+          description: 任意。省略/空文字/Unicode White_Spaceだけなら未登録。公開DTOへ返さない。
+          default: ''
+          writeOnly: true
+    MeetingInfoRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - text
+      properties:
+        text:
+          type: string
+          minLength: 0
+          maxLength: 1000
+          description: 空文字・Unicode White_Spaceのみで未登録へ戻す。
+          writeOnly: true
+    MeetingInfo:
+      type: object
+      additionalProperties: false
+      required:
+      - registered
+      - text
+      properties:
+        registered:
+          type: boolean
+          description: 未登録ならfalse、textは空文字。
+        text:
+          type: string
+          minLength: 0
+          maxLength: 1000
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - fields
+      properties:
+        code:
+          type: string
+          enum:
+          - VALIDATION_ERROR
+          - UNAUTHENTICATED
+          - CSRF_INVALID
+          - NOT_OWNER
+          - MEETING_INFO_FORBIDDEN
+          - RECRUITMENT_NOT_FOUND
+          - OWN_RECRUITMENT
+          - ALREADY_PARTICIPATING
+          - NOT_PARTICIPATING
+          - RECRUITMENT_FULL
+          - RECRUITMENT_CLOSED
+          - RECRUITMENT_CANCELLED
+          - RECRUITMENT_STARTED
+          - NOT_MANUALLY_CLOSED
+          - METHOD_NOT_ALLOWED
+          - UNSUPPORTED_MEDIA_TYPE
+          - INTERNAL_ERROR
+          - SERVICE_UNAVAILABLE
+        message:
+          type: string
+          minLength: 1
+        fields:
+          type: array
+          items:
+            type: string
+            enum:
+            - game
+            - title
+            - description
+            - startsAt
+            - capacity
+            - meetingInfo
+            - text
+            - recruitmentId
+            - page
+            - kind
+            - period
+          uniqueItems: true
+          description: 項目名のみ。該当なしは空配列。入力値は返さない。
+    RecruitmentDetail:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - game
+      - title
+      - startsAt
+      - capacity
+      - participantCount
+      - state
+      - organizer
+      - description
+      - participants
+      properties:
+        id:
+          type: string
+          format: uuid
+        game:
+          $ref: '#/components/schemas/GameCode'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+        startsAt:
+          type: string
+          format: date-time
+          description: UTCのZ形式で返す。画面はAsia/Tokyoで表示する。
+        capacity:
+          type: integer
+          minimum: 1
+          maximum: 9
+        participantCount:
+          type: integer
+          minimum: 0
+          maximum: 9
+        state:
+          $ref: '#/components/schemas/RecruitmentState'
+        organizer:
+          $ref: '#/components/schemas/AccountProfile'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Unicodeコードポイント数。プレーンテキスト、改行を保持する。
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountProfile'
+          maxItems: 9
+          description: 参加中のみ。joinedAt昇順、同時はaccountId昇順。配列長とparticipantCountが一致。
+      description: 公開情報のみ。合流情報・ログインID・パスワード・JWTを含めない。募集者をparticipantsに含めない。
+    RecruitmentPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - pageSize
+      - hasNext
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecruitmentSummary'
+          maxItems: 20
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          const: 20
+        hasNext:
+          type: boolean
+  responses:
+    Error400:
+      description: 入力形式/JSON/UUID/query/日時が無効。fieldsは項目名のみ。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VALIDATION_ERROR
+            message: 入力形式/JSON/UUID/query/日時が無効。fieldsは項目名のみ。
+            fields: []
+    Error401:
+      description: 未ログイン・不正JWT・期限切れ・失効・本人不在。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHENTICATED
+            message: 未ログイン・不正JWT・期限切れ・失効・本人不在。
+            fields: []
+    Error403:
+      description: 本人権限なし、またはCSRF/Origin不成立。CSRF_INVALID/NOT_OWNER/MEETING_INFO_FORBIDDEN。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_OWNER
+            message: 本人権限なし、またはCSRF/Origin不成立。CSRF_INVALID/NOT_OWNER/MEETING_INFO_FORBIDDEN。
+            fields: []
+    Error404:
+      description: 有効UUIDだが募集なし。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: RECRUITMENT_NOT_FOUND
+            message: 有効UUIDだが募集なし。
+            fields: []
+    Error409:
+      description: 状態/時刻/本人参加関係により操作できない。人数を変更しない。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: RECRUITMENT_STARTED
+            message: 状態/時刻/本人参加関係により操作できない。人数を変更しない。
+            fields: []
+    Error415:
+      description: 本文あり操作のContent-Typeがapplication/jsonでない。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNSUPPORTED_MEDIA_TYPE
+            message: 本文あり操作のContent-Typeがapplication/jsonでない。
+            fields: []
+    Error500:
+      description: 内部詳細を隠したエラー。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_ERROR
+            message: 内部詳細を隠したエラー。
+            fields: []
+    Error503:
+      description: DB/transactionが利用不可。成功扱いしない。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: SERVICE_UNAVAILABLE
+            message: DB/transactionが利用不可。成功扱いしない。
+            fields: []
+    Error405:
+      description: 未対応のメソッド。Allowヘッダー、変更なし。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+        Allow:
+          schema:
+            type: string
+          description: そのURLで許可されたHTTPメソッド。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: METHOD_NOT_ALLOWED
+            message: この操作方法は利用できません。
+            fields: []
