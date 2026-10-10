@@ -1,7 +1,7 @@
 # アカウントAPI契約ガイド
 
 正本: [openapi.yaml](../../../schema/auth/openapi.yaml)。業務要件: [spec.md](../spec.md)。
-この段階は設計のみであり、以下のAPIはまだ動作しない。
+以下のAPIを実装済み。起動と検証の手順は[quickstart](../quickstart.md)を参照。
 
 | メソッド | URL | 用途 | 成功 |
 | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Schemathesisを使用する（2026-10-10のユーザー指定）。実装時にP
 
 - 過去の配置でOpenAPIの形式チェックを1回実施。その後に配置・入力patternの変更あり。
 - 現在の配置、文書の参照、タスクの形式は確認済み。
-- 最終版のSchemathesis読込・実APIへの応答検証は未実施。API本体は未実装。
+- Schemathesisの読込・実APIの応答検証を実施。全5操作の正常系・異常系・生成入力を確認。
 
 公式資料: [CLI](https://schemathesis.readthedocs.io/en/stable/reference/cli/)、
 [認証](https://schemathesis.readthedocs.io/en/stable/guides/auth/)、
@@ -86,8 +86,7 @@ Schemathesisを使用する（2026-10-10のユーザー指定）。実装時にP
 - 生成成功とJavaコンパイル成功を別々に確認する。OpenAPI 3.1.1の`const`、`additionalProperties: false`、Unicodeコードポイントの文字数が生成後にも意図どおり扱われるか、既存の契約・境界値テストで確認する。生成annotationだけに検証を任せない。
 - 生成したメソッドの型に合わせた実装はコンパイラで確認できるが、実際の応答内容・Cookie・業務動作はSchemathesisと振る舞いテストで確認する。
 
-OpenAPI Generatorによる仕様検証はDockerで実施済み（下記）。Java/Mavenとbackendが未導入のため、Javaコード生成・コンパイルは未実施。
-導入後に成功結果と固定バージョンをquickstartへ記録する。
+OpenAPI Generatorによる仕様検証、MavenのJavaコード生成・コンパイル・verifyを実施済み。固定バージョンと実行コマンドはquickstartに記録。
 
 公式資料: [Maven plugin](https://openapi-generator.tech/docs/plugins/)、
 [Spring generator](https://openapi-generator.tech/docs/generators/spring/)、
@@ -113,3 +112,30 @@ docker run --rm --network none \
 ```
 
 仕様ファイルの形式・構造の検証結果であり、Javaコード生成・コンパイルや実APIの応答・業務動作の合格を意味しない。
+
+
+### 未定義のHTTPメソッド
+
+定義されたURLに未対応のHTTPメソッドでアクセスした場合、405、Allowヘッダー、
+METHOD_NOT_ALLOWEDの共通Errorを返し、状態を変更しない。HTTPのHEAD/OPTIONSは
+フレームワークによる処理を許容する。Schemathesisの未対応メソッド生成で確認する。
+
+Cookieなし・不正・期限切れのログアウトでは、失効を記録する対象がないためDBトランザクションを開始しない。有効なJWTだけを失効処理のトランザクションへ渡す。
+
+
+### 実装後の検証結果（2026-10-10）
+
+- OpenAPI Generator 7.26.0: METHOD_NOT_ALLOWED追加後も`No validation issues detected.`、終了コード0。
+- 最終契約のSHA-256: `eb90ba7324392f24efce44ca7799cc5275f50be23c75f06217d4210a28d11e2c`
+- Maven verify: JUnit・MockMvc・Testcontainers PostgreSQL・ArchUnitの22テスト成功、skipなし。
+- React: typecheck/build成功、Vitestの14テスト成功。
+- Schemathesis 4.30.1: シナリオ2件＋生成入力を含む5操作、計7テスト成功。
+- Playwright/Chromium: 登録から複数タブ・別端末・JWTコピーの拒否・再ログインと重複ID表示、2テスト成功。
+- 初期化SQL: 専用DBへの2回の実行成功。開発DBに対する実行は行わない。
+- 手動の利用時間計測と初見5人の評価は未実施。自動テスト合格をその達成と見なさない。
+
+生成テストで見つかった未対応HTTPメソッドの500を405へ修正し、APIで不要なmultipart解析を無効化した。
+ブラウザテストで見つかった複数タブのCSRF更新競合は、POST直前に最新Cookieのraw値を使うことで対応した。
+Cookie保持を前提とする認証プローブの自動再送は契約照合に含めず、認証とCSRFの拒否を明示的なテストで検証する。
+
+最終版jarでAPIを再起動し、失効済みJWTは401、有効JWTは200になることを確認。専用DBの初期化後に同じIDでの登録を2回確認した。

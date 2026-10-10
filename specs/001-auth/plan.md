@@ -8,7 +8,7 @@
 
 登録・ログイン・ログアウト・現在の本人確認をSpring Boot APIとReact画面で提供する。
 ログインごとに1時間有効なJWTをHttpOnly Cookieへ設定し、PostgreSQLの失効一覧でログアウトを保証する。
-登録条件、複数端末、期限境界を契約とテストに対応付ける。今回は設計成果物までを作成する。
+登録条件、複数端末、期限境界を契約とテストに対応付ける。実装進捗はtasks.md、実行結果はquickstartと契約ガイドで管理する。
 
 ## Technical Context
 
@@ -71,7 +71,7 @@ schema/
 
 ### Source Code (repository root)
 
-以下は実装時に作成する構成であり、現時点で存在するソースコードではない。
+以下の構成をimplement-authで実装した。
 
 ```text
 backend/
@@ -126,6 +126,5 @@ compose.yaml                        # PostgreSQLのみ
 ## Validation Status
 
 設計後の憲章チェックは通過。契約の確認状況は[契約ガイド](contracts/README.md)に記録する。
-API未実装のためSchemathesisでの応答検証は未実施。ツールと実行手順はtasks.mdで実装対象に指定した。
-アプリ未実装・Java未導入のためビルド、動作、セキュリティの実装検証は未実施。
-実際のGitブランチはplan-account。Spec Kitの対象ディレクトリはspecs/001-authであり、番号とブランチ名は独立して管理する。
+2026-10-10に実装と自動検証を実施。Java生成・verify、Reactの型検査・テスト・build、SchemathesisとPlaywrightを確認。手動の利用時間と初見利用者の評価は未実施。
+実際のGitブランチはimplement-auth。plan-accountの設計は98a9c9aでコミット・プッシュ済み。Spec Kitの対象ディレクトリはspecs/001-authであり、番号とブランチ名は独立して管理する。

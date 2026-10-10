@@ -361,6 +361,7 @@ components:
           - SERVICE_UNAVAILABLE
           - INVALID_CREDENTIALS
           - ALREADY_AUTHENTICATED
+          - METHOD_NOT_ALLOWED
         message:
           type: string
           minLength: 1
