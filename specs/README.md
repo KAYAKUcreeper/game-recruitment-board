@@ -4,13 +4,16 @@
 
 | 仕様 | 責務 | 依存 |
 | --- | --- | --- |
-| [アカウント](002-account/spec.md) | 登録・ログイン・ログアウト・アカウント入力条件 | 掲示板の業務ルールには依存しない |
-| [掲示板](001-game-recruitment/spec.md) | 募集・参加・キャンセル・締め切り・中止・合流情報・マイページ | アカウントの本人識別と公開表示名 |
+| [アカウント](001-auth/spec.md) | 登録・ログイン・ログアウト・アカウント入力条件 | 掲示板の業務ルールには依存しない |
+| [掲示板](002-game-recruitment/spec.md) | 募集・参加・キャンセル・締め切り・中止・合流情報・マイページ | アカウントの本人識別と公開表示名 |
 
-番号は作成順であり、実装順ではない。既存リンクと掲示板の要件IDを保つため、既存の001を掲示板に残し、アカウントを002として追加した。
-アカウントから計画し、続いて掲示板を計画する。各ディレクトリでplan.md、tasks.md、contracts/を管理する。
-現在のSpec Kit対象は `.specify/feature.json` により `specs/002-account` に設定する。
-掲示板を計画する際は対象を `specs/001-game-recruitment` に切り替える。
+仕様を実装順に整理し、001をアカウント、002を掲示板とする。
+アカウントから計画し、続いて掲示板を計画する。各ディレクトリでplan.mdとtasks.mdを管理する。
+API契約はルートの `schema/auth/openapi.yaml` と `schema/game-recruitment/openapi.yaml` に集約する。
+アカウント契約は作成済み。掲示板契約は次の設計段階で作成する。
+機能ごとのcontracts/には中央の契約への参照を置き、Spec Kitの後続処理で参照できるようにする。
+現在のSpec Kit対象は `.specify/feature.json` により `specs/001-auth` に設定する。
+掲示板を計画する際は対象を `specs/002-game-recruitment` に切り替える。
 
 ## 重複を避けるルール
 
@@ -31,4 +34,4 @@
 | FR-023（情報保持） | アカウント情報はACC-FR-008、募集・参加等は掲示板FR-023 |
 | FR-024（テスト用初期化） | 掲示板に維持し、アカウントから参照 |
 
-共通の技術選択は[API設計方針](001-game-recruitment/api-design-decision.md)を参照する。
+共通の技術選択は[API設計方針](002-game-recruitment/api-design-decision.md)を参照する。

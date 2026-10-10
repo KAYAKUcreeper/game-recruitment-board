@@ -1,0 +1,482 @@
+openapi: 3.1.1
+info:
+  title: Game Recruitment Board — Account API
+  version: 1.0.0
+  description: 'アカウント仕様ACC-FR-001〜011のAPI契約。全応答Cache-Control: no-store。JSONの文字数はUnicodeコードポイント。署名付きJWTをHttpOnly Cookieで扱う。更新操作はCSRF Cookieとheaderの両方が必要。APIは/api配下、同一オリジンで利用する。'
+servers:
+- url: /api
+  description: 開発はReactのproxy経由。公開は同一オリジンHTTPS。
+tags:
+- name: Accounts
+  description: 登録
+- name: Authentication
+  description: 認証・ログアウト・CSRF
+security: []
+paths:
+  /auth/csrf:
+    get:
+      tags:
+      - Authentication
+      operationId: getCsrfToken
+      summary: CSRFトークンを取得する
+      description: 未ログインでも取得可能。初期表示、ログイン成功後、ログアウト後に呼ぶ。無効な認証Cookieがあっても取得できる。CSRF Cookieを実体化しraw値を返す。
+      security: []
+      responses:
+        '200':
+          description: CSRF tokenとCookieを取得。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Set-Cookie:
+              description: 成功時に設定または削除されるCookie。複数ヘッダーを許容する。
+              schema:
+                type: string
+                description: JWTを含むHttpOnly CookieとCSRF Cookieを別々のSet-Cookieヘッダーとして返す。カンマ結合しない。Cookieの属性と削除手順はspecs/001-auth/contracts/README.md参照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfToken'
+              example:
+                token: example-csrf-token
+                headerName: X-XSRF-TOKEN
+        '500':
+          $ref: '#/components/responses/Error500'
+  /accounts:
+    post:
+      tags:
+      - Accounts
+      operationId: registerAccount
+      summary: アカウントを登録する
+      description: 登録成功ではログインしない。IDの大小違いを含む同時登録も一意に制限する。公開プロフィールだけを返す。
+      security:
+      - CsrfCookie: []
+        CsrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              loginId: player123
+              password: example-passphrase-123
+              displayName: もち
+      responses:
+        '201':
+          description: 登録成功。JWTは発行しない。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+              example:
+                id: c31568e5-1234-4ec7-9819-6653ac03de51
+                displayName: もち
+        '400':
+          $ref: '#/components/responses/Error400'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          description: 正規化したログインIDが既に存在する。LOGIN_ID_TAKEN。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+        '415':
+          $ref: '#/components/responses/Error415'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      operationId: login
+      summary: 1時間有効なログインを開始する
+      description: 成功時にJWTをauth_token Cookieへ設定し、CSRF Cookieを削除する。JWT自体をJSONに含めない。署名不正・期限切れ・失効済みCookieは新規ログインを妨げない。同じブラウザに有効なログインがある場合は409 ALREADY_AUTHENTICATEDで先にログアウトを促す。他端末の有効ログインは妨げない。
+      security:
+      - CsrfCookie: []
+        CsrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              loginId: player123
+              password: example-passphrase-123
+      responses:
+        '200':
+          description: ログイン成功。次の更新操作の前にCSRFを再取得する。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Set-Cookie:
+              description: 成功時に設定または削除されるCookie。複数ヘッダーを許容する。
+              schema:
+                type: string
+                description: JWTを含むHttpOnly CookieとCSRF Cookieを別々のSet-Cookieヘッダーとして返す。カンマ結合しない。Cookieの属性と削除手順はspecs/001-auth/contracts/README.md参照。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginState'
+              example:
+                account:
+                  id: c31568e5-1234-4ec7-9819-6653ac03de51
+                  displayName: もち
+                expiresAt: '2026-10-03T13:00:00Z'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          description: IDまたはパスワードが不一致。INVALID_CREDENTIALS。どちらが違うかは返さない。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          description: このブラウザは既に有効なログイン中。ALREADY_AUTHENTICATED。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+        '415':
+          $ref: '#/components/responses/Error415'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auth/logout:
+    post:
+      tags:
+      - Authentication
+      operationId: logout
+      summary: このブラウザのログインを終了する
+      description: 認証Cookieは任意。検証済み・有効なJWTのjtiを失効登録しcommit後にauth_tokenとCSRF Cookieを削除する。Cookieなし・不正署名・期限切れ・既に失効済みも204で削除。署名不正の値をDBに登録しない。CSRFは常に必要。DB障害で失効を確定できなければ503として成功扱いしない。他端末のJWTは失効しない。
+      security:
+      - CsrfCookie: []
+        CsrfHeader: []
+      responses:
+        '204':
+          description: ログアウト完了。本文なし。次の更新操作の前にCSRFを再取得する。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Set-Cookie:
+              description: 成功時に設定または削除されるCookie。複数ヘッダーを許容する。
+              schema:
+                type: string
+                description: JWTを含むHttpOnly CookieとCSRF Cookieを別々のSet-Cookieヘッダーとして返す。カンマ結合しない。Cookieの属性と削除手順はspecs/001-auth/contracts/README.md参照。
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /auth/me:
+    get:
+      tags:
+      - Authentication
+      operationId: getCurrentAccount
+      summary: 現在ログイン中の本人と期限を確認する
+      description: JWT署名・必須claim・固定期限・失効一覧・アカウントの存在を検証する。パスワード、ログインID、JWTは返さない。
+      security:
+      - AuthCookie: []
+      responses:
+        '200':
+          description: 本人と現在のログイン期限。
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginState'
+              example:
+                account:
+                  id: c31568e5-1234-4ec7-9819-6653ac03de51
+                  displayName: もち
+                expiresAt: '2026-10-03T13:00:00Z'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+components:
+  securitySchemes:
+    AuthCookie:
+      type: apiKey
+      in: cookie
+      name: auth_token
+      description: HS256 JWT。HttpOnly、Path=/api、SameSite=Lax、Domainなし、Secureは通常必須。ブラウザが送信。
+    CsrfCookie:
+      type: apiKey
+      in: cookie
+      name: XSRF-TOKEN
+      description: CSRF token、Path=/、Domainなし。headerと一致する必要がある。認証用ではない。
+    CsrfHeader:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+      description: GET /auth/csrfで取得したtokenを設定する。Cookie照合とOrigin確認も行う。
+  schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - loginId
+      - password
+      - displayName
+      properties:
+        loginId:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: ^[A-Za-z0-9_]+$
+          description: 英字大小は区別しない。前後空白は不許可。公開応答へ含めない。
+        password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          writeOnly: true
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+          description: Unicodeコードポイント数。Unicode White_Spaceのみ不可。前後空白・大小・Unicodeを変更しない。
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+          description: 日本語可、重複可。Unicodeコードポイント数。Unicode White_Spaceのみ不可。
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - loginId
+      - password
+      properties:
+        loginId:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: ^[A-Za-z0-9_]+$
+          description: 英字大小は区別しない。前後空白は不許可。公開応答へ含めない。
+        password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          writeOnly: true
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+          description: Unicodeコードポイント数。Unicode White_Spaceのみ不可。前後空白・大小・Unicodeを変更しない。
+    Account:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - displayName
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 30
+          pattern: '[^\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]'
+          description: 日本語可、重複可。Unicodeコードポイント数。Unicode White_Spaceのみ不可。
+    LoginState:
+      type: object
+      additionalProperties: false
+      required:
+      - account
+      - expiresAt
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        expiresAt:
+          type: string
+          format: date-time
+          description: このログインの固定期限。操作しても延長しない。
+    CsrfToken:
+      type: object
+      additionalProperties: false
+      required:
+      - token
+      - headerName
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: XSRF-TOKEN Cookieと同じraw値。JWTではない。
+        headerName:
+          type: string
+          const: X-XSRF-TOKEN
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      - fields
+      properties:
+        code:
+          type: string
+          enum:
+          - VALIDATION_ERROR
+          - UNAUTHENTICATED
+          - CSRF_INVALID
+          - LOGIN_ID_TAKEN
+          - UNSUPPORTED_MEDIA_TYPE
+          - INTERNAL_ERROR
+          - SERVICE_UNAVAILABLE
+          - INVALID_CREDENTIALS
+          - ALREADY_AUTHENTICATED
+        message:
+          type: string
+          minLength: 1
+        fields:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - loginId
+            - password
+            - displayName
+          description: 入力エラーの対象項目。該当しなければ空配列。入力値は返さない。
+  responses:
+    Error400:
+      description: 入力が無効。VALIDATION_ERROR。fieldsは項目名だけで入力値を返さない。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VALIDATION_ERROR
+            message: 処理を完了できませんでした。
+            fields: []
+    Error401:
+      description: 認証不成立。INVALID_CREDENTIALSまたはUNAUTHENTICATED。期限切れ・失効を含む。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHENTICATED
+            message: 処理を完了できませんでした。
+            fields: []
+    Error403:
+      description: CSRF token欠落・不一致、またはOrigin不一致。CSRF_INVALID。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: CSRF_INVALID
+            message: 処理を完了できませんでした。
+            fields: []
+    Error409:
+      description: LOGIN_ID_TAKENまたはALREADY_AUTHENTICATED。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: LOGIN_ID_TAKEN
+            message: 処理を完了できませんでした。
+            fields: []
+    Error415:
+      description: Content-Typeがapplication/jsonでない。UNSUPPORTED_MEDIA_TYPE。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNSUPPORTED_MEDIA_TYPE
+            message: 処理を完了できませんでした。
+            fields: []
+    Error500:
+      description: 想定外の内部エラー。詳細や秘密情報を返さない。INTERNAL_ERROR。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_ERROR
+            message: 処理を完了できませんでした。
+            fields: []
+    Error503:
+      description: DBなど依存機能の利用不可。SERVICE_UNAVAILABLE。認証・ログアウトを成功扱いしない。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: SERVICE_UNAVAILABLE
+            message: 処理を完了できませんでした。
+            fields: []
