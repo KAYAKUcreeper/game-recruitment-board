@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1430" viewBox="0 0 1440 1430" role="img" aria-labelledby="title desc">
+<title id="title">ゲーム募集掲示板 ユースケース図</title>
+<desc id="desc">訪問者、ログイン利用者、募集者、参加者と、初版で提供予定の15機能との関係を示す。</desc>
+<style>text{font-family:"Noto Sans CJK JP","Noto Sans JP","Yu Gothic",sans-serif;fill:#172b4d} .link{stroke:#65758b;stroke-width:1.6;fill:none} .actor{stroke:#172b4d;stroke-width:2.5;fill:none}</style>
+<rect width="1440" height="1430" fill="white"/>
+<text x="720" y="46" text-anchor="middle" font-size="29">ゲーム募集掲示板 ユースケース図</text>
+<text x="720" y="80" text-anchor="middle" font-size="18">初版の開発対象（実装予定の機能を含む）</text>
+<rect x="265" y="110" width="910" height="1090" rx="3" fill="#fafcff" stroke="#172b4d" stroke-width="2"/>
+<text x="720" y="149" text-anchor="middle" font-size="23">ゲーム募集掲示板 Webアプリケーション</text>
+<path class="link" d="M 150 390 L 305 220"/>
+<path class="link" d="M 150 390 L 305 330"/>
+<path class="link" d="M 150 390 L 305 440"/>
+<path class="link" d="M 150 390 L 305 550"/>
+<path class="link" d="M 150 390 L 305 660"/>
+<path class="link" d="M 150 860 L 305 790"/>
+<path class="link" d="M 150 860 L 305 900"/>
+<path class="link" d="M 150 860 L 305 1010"/>
+<path class="link" d="M 150 860 L 305 1120"/>
+<path class="link" d="M 1290 400 L 1140 220"/>
+<path class="link" d="M 1290 400 L 1140 350"/>
+<path class="link" d="M 1290 400 L 1140 480"/>
+<path class="link" d="M 1290 400 L 1140 610"/>
+<path class="link" d="M 1290 955 L 1140 875"/>
+<path class="link" d="M 1290 400 L 1205 700 L 1205 1040 L 1140 1040"/>
+<path class="link" d="M 1290 955 L 1140 1040"/>
+<ellipse cx="495" cy="220" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="227" text-anchor="middle" font-size="21">アカウントを登録する</text>
+<ellipse cx="495" cy="330" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="337" text-anchor="middle" font-size="21">ログインする</text>
+<ellipse cx="495" cy="440" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="447" text-anchor="middle" font-size="21">募集一覧を見る</text>
+<ellipse cx="495" cy="550" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="557" text-anchor="middle" font-size="21">ゲームで募集を絞り込む</text>
+<ellipse cx="495" cy="660" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="667" text-anchor="middle" font-size="21">募集詳細を見る</text>
+<ellipse cx="495" cy="790" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="797" text-anchor="middle" font-size="21">ログアウトする</text>
+<ellipse cx="495" cy="900" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="907" text-anchor="middle" font-size="21">募集を作成する</text>
+<ellipse cx="495" cy="1010" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="1017" text-anchor="middle" font-size="21">マイページを見る</text>
+<ellipse cx="495" cy="1120" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="495" y="1127" text-anchor="middle" font-size="21">募集に参加する</text>
+<ellipse cx="950" cy="220" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="227" text-anchor="middle" font-size="21">募集を締め切る</text>
+<ellipse cx="950" cy="350" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="357" text-anchor="middle" font-size="21">募集を再開する</text>
+<ellipse cx="950" cy="480" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="487" text-anchor="middle" font-size="21">開催を中止する</text>
+<ellipse cx="950" cy="610" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="617" text-anchor="middle" font-size="21">合流情報を登録・更新する</text>
+<ellipse cx="950" cy="875" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="882" text-anchor="middle" font-size="21">参加をキャンセルする</text>
+<ellipse cx="950" cy="1040" rx="190" ry="40" fill="white" stroke="#172b4d" stroke-width="2"/>
+<text x="950" y="1047" text-anchor="middle" font-size="21">合流情報を見る</text>
+<g class="actor"><circle cx="120" cy="318" r="19"/><path d="M 120 337 V 402 M 90 362 H 150 M 120 402 L 91 442 M 120 402 L 149 442"/></g>
+<text x="120" y="472" text-anchor="middle" font-size="20">訪問者</text>
+<text x="120" y="499" text-anchor="middle" font-size="16">（未ログイン）</text>
+<g class="actor"><circle cx="120" cy="788" r="19"/><path d="M 120 807 V 872 M 90 832 H 150 M 120 872 L 91 912 M 120 872 L 149 912"/></g>
+<text x="120" y="942" text-anchor="middle" font-size="20">ログイン利用者</text>
+<g class="actor"><circle cx="1320" cy="328" r="19"/><path d="M 1320 347 V 412 M 1290 372 H 1350 M 1320 412 L 1291 452 M 1320 412 L 1349 452"/></g>
+<text x="1320" y="482" text-anchor="middle" font-size="20">募集者</text>
+<text x="1320" y="509" text-anchor="middle" font-size="16">（ログイン済み）</text>
+<g class="actor"><circle cx="1320" cy="883" r="19"/><path d="M 1320 902 V 967 M 1290 927 H 1350 M 1320 967 L 1291 1007 M 1320 967 L 1349 1007"/></g>
+<text x="1320" y="1037" text-anchor="middle" font-size="20">参加者</text>
+<text x="1320" y="1064" text-anchor="middle" font-size="16">（ログイン済み）</text>
+<text x="55" y="1250" text-anchor="start" font-size="19">募集者・参加者はログイン利用者の役割であり、共通機能も利用できる。公開情報はログイン後も閲覧できる。</text>
+<text x="55" y="1287" text-anchor="start" font-size="19">管理操作・参加キャンセルは開始前など、仕様で定めた条件に従う。</text>
+<text x="55" y="1324" text-anchor="start" font-size="19">合流情報は募集者本人、または開始前かつ中止前の参加者が閲覧できる。</text>
+<text x="55" y="1361" text-anchor="start" font-size="19">入力検証・権限確認・状態判定は各機能に含める。テスト用データ初期化は本図の対象外とする。</text>
+</svg>

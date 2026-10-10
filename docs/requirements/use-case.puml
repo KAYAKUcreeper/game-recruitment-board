@@ -1,0 +1,56 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam packageStyle rectangle
+title ゲーム募集掲示板 ユースケース図（初版の開発対象）
+
+actor "訪問者\n（未ログイン）" as Visitor
+actor "ログイン利用者" as User
+actor "募集者\n（ログイン済み）" as Organizer
+actor "参加者\n（ログイン済み）" as Participant
+
+rectangle "ゲーム募集掲示板 Webアプリケーション" {
+  usecase "アカウントを登録する" as Register
+  usecase "ログインする" as Login
+  usecase "募集一覧を見る" as List
+  usecase "ゲームで募集を絞り込む" as Filter
+  usecase "募集詳細を見る" as Detail
+  usecase "ログアウトする" as Logout
+  usecase "募集を作成する" as Create
+  usecase "募集に参加する" as Join
+  usecase "マイページを見る" as MyPage
+  usecase "募集を締め切る" as Close
+  usecase "募集を再開する" as Reopen
+  usecase "開催を中止する" as CancelEvent
+  usecase "合流情報を登録・更新する" as EditMeeting
+  usecase "参加をキャンセルする" as CancelJoin
+  usecase "合流情報を見る" as ViewMeeting
+}
+
+Visitor -- Register
+Visitor -- Login
+Visitor -- List
+Visitor -- Filter
+Visitor -- Detail
+User -- Logout
+User -- Create
+User -- Join
+User -- MyPage
+Organizer -- Close
+Organizer -- Reopen
+Organizer -- CancelEvent
+Organizer -- EditMeeting
+Organizer -- ViewMeeting
+Participant -- CancelJoin
+Participant -- ViewMeeting
+
+legend bottom
+  募集者・参加者はログイン利用者の役割であり、共通機能も利用できる。
+  募集の公開情報はログイン後も閲覧できる。
+  管理操作・参加キャンセルは開始前など、仕様で定めた条件に従う。
+  合流情報は募集者本人、または開始前かつ中止前の参加者が閲覧できる。
+  入力検証・権限確認・状態判定は各機能に含める。
+  利用者向け機能を対象とし、テスト用データ初期化は省略する。
+endlegend
+@enduml
