@@ -81,3 +81,16 @@ it("shows duplicate-ID error from API", async () => {
   );
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
+
+it("preserves line breaks in password and display name", async () => {
+  const password = "  日本語Pass\nphrase12345  ";
+  const displayName = "もち\n募集者";
+  response = { id: "c31568e5-1234-4ec7-9819-6653ac03de51", displayName };
+  render(<RegisterPage />);
+  fill("player_a", password, displayName);
+  await screen.findByText("登録完了");
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+    loginId: "player_a", password, displayName,
+  });
+  expect(screen.getByRole("link", { name: "ログインへ進む" })).toBeVisible();
+});

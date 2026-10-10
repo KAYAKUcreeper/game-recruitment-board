@@ -60,3 +60,38 @@ test("duplicate ID is explained on registration screen", async ({ page }) => {
       );
   }
 });
+
+test("multiline credentials preserve input and password text stays masked", async ({ page }) => {
+  const id = "lines_" + Date.now();
+  const secret = "  日本語Pass\nphrase12345  ";
+  const name = "もち\n募集者";
+  await page.goto("/register");
+  await page.getByLabel("ログインID").fill(id);
+  const field = page.getByLabel("パスワード");
+  await expect(field).toBeEnabled();
+  await field.fill(secret);
+  await expect(field).toHaveValue(secret);
+  await expect(field).toHaveCSS("-webkit-text-security", "disc");
+  await expect(field).not.toHaveAttribute("type", "text");
+  await page.getByLabel("表示名").fill(name);
+  const registered = page.waitForRequest(request => request.url().endsWith("/api/accounts") && request.method() === "POST");
+  await page.getByRole("button", { name: "登録する" }).click();
+  expect((await registered).postDataJSON()).toEqual({ loginId: id, password: secret, displayName: name });
+  await expect(page.getByText("登録完了")).toBeVisible();
+  await page.getByRole("link", { name: "ログインへ進む" }).click();
+  await page.getByLabel("ログインID").fill(id);
+  await page.getByLabel("パスワード").fill(secret);
+  await expect(page.getByLabel("パスワード")).toHaveCSS("-webkit-text-security", "disc");
+  const loggedIn = page.waitForRequest(request => request.url().endsWith("/api/auth/login") && request.method() === "POST");
+  await page.getByRole("button", { name: "ログインする" }).click();
+  expect((await loggedIn).postDataJSON()).toEqual({ loginId: id, password: secret });
+  await expect(page.getByText("もち 募集者さんでログイン中")).toBeVisible();
+  const profile = await page.request.get("/api/auth/me");
+  expect((await profile.json()).account.displayName).toBe(name);
+  await page.getByRole("button", { name: "ログアウト", exact: true }).click();
+  await expect(page.getByText("ログインしていません。")).toBeVisible();
+  await page.getByLabel("ログインID").fill(id);
+  await page.getByLabel("パスワード").fill(secret.replace("\n", ""));
+  await page.getByRole("button", { name: "ログインする" }).click();
+  await expect(page.getByRole("alert")).toContainText("一致しません");
+});

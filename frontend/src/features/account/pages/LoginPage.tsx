@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../AuthProvider";
+import PasswordField from "../components/PasswordField";
 import { inputErrors } from "../input";
 export default function LoginPage() {
   const auth = useAuth();
@@ -39,17 +40,13 @@ export default function LoginPage() {
           />
         </label>
         {errors.loginId && <p className="field-error">{errors.loginId}</p>}
-        <label>
-          パスワード
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-invalid={!!errors.password}
-          />
-        </label>
-        {errors.password && <p className="field-error">{errors.password}</p>}
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          invalid={!!errors.password}
+        />
+        {errors.password && <p id="password-error" className="field-error">{errors.password}</p>}
         {message && <p role="alert">{message}</p>}
         <button disabled={busy || auth.loading}>
           {busy ? "ログイン中…" : "ログインする"}

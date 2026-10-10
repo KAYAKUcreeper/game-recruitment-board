@@ -28,3 +28,14 @@ for (const [status, code, message] of [
     expect(mock.login).toHaveBeenCalledTimes(1);
   });
 }
+
+it("sends a multiline password unchanged", async () => {
+  mock.login.mockReset().mockResolvedValue(undefined);
+  render(<LoginPage />);
+  const password = "  日本語Pass\nphrase12345  ";
+  fireEvent.change(screen.getByLabelText("ログインID"), { target: { value: "player_a" } });
+  fireEvent.change(screen.getByLabelText("パスワード"), { target: { value: password } });
+  fireEvent.click(screen.getByRole("button", { name: "ログインする" }));
+  await screen.findByRole("button", { name: "ログインする" });
+  expect(mock.login).toHaveBeenCalledWith("player_a", password);
+});

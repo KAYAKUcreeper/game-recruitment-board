@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { register } from "../api/register";
+import PasswordField from "../components/PasswordField";
 import { inputErrors } from "../input";
 import { ApiError } from "../../../shared/api/client";
 export default function RegisterPage() {
@@ -66,17 +67,12 @@ export default function RegisterPage() {
             {errors.loginId}
           </p>
         )}
-        <label>
-          パスワード
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            aria-invalid={!!errors.password}
-            aria-describedby="password-error"
-          />
-        </label>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          invalid={!!errors.password}
+        />
         {errors.password && (
           <p id="password-error" className="field-error">
             {errors.password}
@@ -84,7 +80,8 @@ export default function RegisterPage() {
         )}
         <label>
           表示名
-          <input
+          <textarea
+            rows={2}
             autoComplete="nickname"
             value={displayName}
             onChange={(e) => setName(e.target.value)}

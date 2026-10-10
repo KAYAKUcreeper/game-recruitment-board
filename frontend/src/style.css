@@ -29,11 +29,22 @@ label {
   display: grid;
   gap: 6px;
 }
-input {
+input,
+textarea {
   padding: 10px;
   font: inherit;
   border: 1px solid #a5b0bf;
   border-radius: 6px;
+}
+.password-input {
+  color: transparent;
+  caret-color: #182638;
+  -webkit-text-security: disc;
+}
+@supports (-webkit-text-security: disc) {
+  .password-input {
+    color: #182638;
+  }
 }
 button {
   padding: 11px 18px;

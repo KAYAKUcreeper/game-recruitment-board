@@ -188,3 +188,22 @@ US1だけではログインを使えないため、最初の利用可能なア�
 - 再起動後の有効ログイン維持と失効JWT拒否、初期化後の同一ID再登録2回を確認。
 - ACC-SC-001の手動時間計測とACC-SC-004の初見利用者評価は未実施。T042は実施状況の正確な記録として完了し、目標達成とは扱わない。
 - after_implementのextension hookは未登録（.specify/extensions.ymlなし）。
+
+
+## Phase 6: Convergence
+
+**Assessment date**: 2026-10-10。認証機能の現行コードをspec.md・plan.md・既存T001〜T042・憲章と照合した結果。既存タスクの完了記録は保持し、以下を追加の残作業として扱う。
+
+- [X] T043 [US1] [US2] HIGH: `frontend/src/features/account/pages/RegisterPage.tsx`と`frontend/src/features/account/pages/LoginPage.tsx`の入力経路で、仕様上有効な改行を含む表示名・パスワードが入力欄によって暗黙に削除される問題を修正する。`input type="text"`および`input type="password"`に改行を含む値を設定すると改行が除去されることをDOMで再現済み。登録時・再ログイン時とも同じパスワードを変更せず送信し、表示名も入力どおり保持する構成にする。秘密情報を通常の平文表示へ露出させず、該当コンポーネントテストと必要なブラウザ結合テストで送信値の一致・登録後のログインを検証する。仕様上の文字数は引き続きUnicodeコードポイント数とする。per ACC-FR-003/004、spec: Edge Cases「パスワードの大小・前後の空白は区別し、入力を自動で変更しない」、spec: Assumptions「改行も1文字として扱う」、T021/T022/T036 (contradicts)
+- [X] T044 [US2] MEDIUM: `backend/src/test/java/com/gamerecruitment/account/integration/LogoutRevocationTest.java`に、実際に失効登録したJWTの期限切れ記録と未期限切れ記録を用意し、Clockを進めて`RevokedTokenCleanup.clean()`を実行する検証を追加する。`expires_at <= 現在時刻`の記録だけが消え、未期限切れ記録が残り、期限切れJWTも未期限切れの失効JWTも認証を通らないことを確認する。既存`exactExpiryAndCleanupDoNotReviveToken`は期限切れ後にlogoutするため失効行が作られず、削除処理の正否を判別できない。per plan: Storage/認証の期限・失効設計、T034/T038 (partial)
+- [X] T045 [US2] MEDIUM: `frontend/src/features/account/AuthProvider.test.tsx`および`frontend/src/features/account/components/AccountStatus.tsx`の対応テストに、固定した現在時刻とfake timerを使った有効期限の表示・期限直前のログイン維持・期限到達時の未ログインへの切り替えを追加する。期限到達後に再ログインへ案内でき、期限が操作や再表示で延長されず、成功した再ログインでは新しい期限を表示することを確認する。現行テストは503・logout成功・401通知のみを検証し、T037で指定された期限表示の検証がない。per ACC-FR-010、US2/AC5、T035/T036/T037 (partial)
+
+
+### Convergence Implementation Results (2026-10-10)
+
+- T043〜T045を完了。既存API契約と入力ルールを維持し、表示名・パスワードの改行を保持する入力欄へ修正。パスワードは伏せ字表示、表示非対応のブラウザは入力不可とし平文表示しない。
+- Java verify: 23 tests、failure/error/skipなし。実際の失効行を使い、期限直前・期限到達時の削除対象とJWT拒否を確認。
+- React: Vitest 18 tests成功、typecheck/build成功。改行の保持、伏せ字非対応時の入力禁止、固定期限表示・期限切れ・再ログイン時の新期限を検証。
+- Playwright/Chromium: 3 tests成功。改行付き登録・ログイン、APIへの入力保持、CSSの伏せ字、改行を除いたパスワードの拒否を追加検証。
+- Schemathesisは今回は再実行していない（API契約・バックエンド本体に変更なし）。Firefoxでの結合テスト、手動の利用時間計測・初見利用者評価は未実施。
+- after_implementのextension hookは未登録（.specify/extensions.ymlなし）。

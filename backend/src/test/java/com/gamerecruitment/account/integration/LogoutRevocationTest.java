@@ -45,4 +45,30 @@ class LogoutRevocationTest extends ApiTestSupport {
     context.getBean(RevokedTokenCleanup.class).clean();
     mvc.perform(get("/api/auth/me").cookie(token)).andExpect(status().isUnauthorized());
   }
+
+  @Test
+  void cleanupDeletesOnlyExpiredRevocationsWithoutRevivingTokens() throws Exception {
+    register("player_a");
+    var expired = login("player_a");
+    send("/api/auth/logout", null, csrf(), expired).andExpect(status().isNoContent());
+    clock.at(Instant.parse("2026-10-10T01:30:00Z"));
+    var liveRevoked = login("player_a");
+    send("/api/auth/logout", null, csrf(), liveRevoked).andExpect(status().isNoContent());
+    var issuer = context.getBean(TokenIssuer.class);
+    var expiredId = issuer.validate(expired.getValue()).orElseThrow().jti();
+    var liveId = issuer.validate(liveRevoked.getValue()).orElseThrow().jti();
+    assertEquals(2, jdbc.queryForObject("select count(*) from revoked_tokens", Integer.class));
+    clock.at(Instant.parse("2026-10-10T01:59:59Z"));
+    context.getBean(RevokedTokenCleanup.class).clean();
+    assertEquals(2, jdbc.queryForObject("select count(*) from revoked_tokens", Integer.class));
+    clock.at(Instant.parse("2026-10-10T02:00:00Z"));
+    context.getBean(RevokedTokenCleanup.class).clean();
+    assertEquals(1, jdbc.queryForObject("select count(*) from revoked_tokens", Integer.class));
+    assertEquals(
+        liveId, jdbc.queryForObject("select jti from revoked_tokens", java.util.UUID.class));
+    assertFalse(context.getBean(RevokedTokenStore.class).isRevoked(expiredId));
+    assertTrue(context.getBean(RevokedTokenStore.class).isRevoked(liveId));
+    mvc.perform(get("/api/auth/me").cookie(expired)).andExpect(status().isUnauthorized());
+    mvc.perform(get("/api/auth/me").cookie(liveRevoked)).andExpect(status().isUnauthorized());
+  }
 }
