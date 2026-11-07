@@ -56,6 +56,34 @@ uv run --project tests/contract pytest tests/contract/test_auth_contract.py test
 
 test_recruitment_contract.pyは実装時に作成。CSRF取得、複数の本人fixture、未来の募集、参加者/未参加者/募集者、全12操作の正常/異常、schema照合を含める。更新fixtureは専用DBへ向け、成功がない401/403だけの合格にしない。
 
+### Hurlのユーザーシナリオ（実装後）
+
+HurlはAPI契約の生成検査ではなく、利用者の操作を順番に実行する最終シナリオテストに使用する。実装時に公式の安定版を`@orangeopensource/hurl`へ固定し、package-lockに記録する。
+
+実行スクリプトは、専用contract DBを初期化してから、衝突しないIDと未来のJST日時を変数として渡す。概念上の実行は次の形とする。
+
+```bash
+npm --prefix frontend exec hurl -- \
+  --test --no-cookie-store \
+  --variable base_url=http://127.0.0.1:8081/api \
+  --variable organizer_id=<実行ごとのID> \
+  --variable participant_id=<実行ごとのID> \
+  --variable starts_at=<未来のJST日時> \
+  tests/scenarios/*.hurl
+```
+
+実際のpackage scriptと変数生成は`$speckit-tasks`の実装タスクで確定する。HurlファイルはCookie storeに依存せず、募集者・参加者それぞれのauth_tokenとCSRF値をcaptureして明示的に送る。JWT、パスワード、CSRF値をレポートへ保存しない。
+
+Hurlで確認するシナリオ:
+
+1. 2アカウントを登録してそれぞれログインする。
+2. 募集者が募集を作成し、募集IDをcaptureする。
+3. 未ログインで一覧・公開詳細を閲覧し、合流情報が含まれないことを確認する。
+4. 参加者が参加し、人数・参加者・マイページ・合流情報を確認する。
+5. 参加者がキャンセルし、人数減少と合流情報の403を確認する。
+6. 募集者が締切・再開・合流情報更新・中止を行い、各状態と権限を確認する。
+7. ログアウト後の認証必須操作が401になることを確認する。
+
 ブラウザ（既存ローカル配置を使う場合）:
 
 ```bash

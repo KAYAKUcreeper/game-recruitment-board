@@ -9,19 +9,19 @@
 3ゲームの募集検索、募集作成、承認なしの参加・キャンセル、募集者の受付管理・中止・合流情報、マイページを既存アプリに追加する。
 同じ募集の変更をPostgreSQLの親行ロックで直列化し、参加行数とClockから現在の状態を判断する。
 公開情報と合流情報を別エンドポイントにし、JWT/CSRFの既存基盤を拡張する。
-本段階は設計と契約のみ。掲示板コード・マイグレーション・tasks.mdはまだ作成しない。
+本段階で設計・契約・実装タスクまでを確定し、掲示板コードとマイグレーションはまだ実装しない。
 
 ## Technical Context
 
 **Language/Version**: 既存Java 25（Temurin 25.0.4.1+1）、TypeScript 5.9.3 strict。
 
-**Primary Dependencies**: 既存Spring Boot 4.1.1、MVC/Security/JDBC、Flyway、JOSE、React/React DOM 19.3.0、Vite 8.3.4、Maven Wrapper 3.10.0。新しいフレームワークは追加しない。
+**Primary Dependencies**: 既存Spring Boot 4.1.1、MVC/Security/JDBC、Flyway、JOSE、React/React DOM 19.3.0、Vite 8.3.4、Maven Wrapper 3.10.0。アプリケーション用の新しいフレームワークは追加しない。ユーザーシナリオテスト用にHurlを開発依存へ追加する。
 
 **Storage**: PostgreSQL 18.4、既存Docker Compose/named volume。`accounts`を参照する`recruitments`と`participations`の2テーブルを追加。ゲーム一覧はJava enumで固定し、ゲーム管理テーブルは作らない。
 
 **Code Generation**: OpenAPI 3.1.1、既存Generator 7.26.0。authと別のMaven executionで`schema/game-recruitment/openapi.yaml`から外側のSpring interface/DTOを生成。別出力ディレクトリとpackageにし、既存auth生成を上書きしない。
 
-**Testing**: JUnit、MockMvc、Testcontainers PostgreSQL、ArchUnit、Vitest/Testing Library、Playwright、Schemathesis＋pytest。既存依存とlockを使う。
+**Testing**: JUnit、MockMvc、Testcontainers PostgreSQL、ArchUnit、Vitest/Testing Library、Playwright、Schemathesis＋pytest、Hurl。Schemathesisは契約適合、HurlはAPIレベルのユーザーシナリオ、Playwrightは画面操作を担当する。
 
 **Target Platform**: PC上のJava/ReactとDocker内のDB。通常HTTPS同一オリジン。localのVite :5173→API :8080、contractの:5174→:8081。対象ブラウザは現行Chrome/Firefox。時刻表示・入力は常にAsia/Tokyo。
 
@@ -47,8 +47,8 @@
 
 ## Phase 0: Research
 
-[research.md](research.md)に、競合、最新読み取り、時刻判定、認証統合、API/エラー、日時入力、固定ゲーム、生成・契約検証の判断を記録。
-既存バージョンを維持し、新しい依存を導入する判断はない。
+[research.md](research.md)に、競合、最新読み取り、時刻判定、認証統合、API/エラー、日時入力、固定ゲーム、生成・契約検証、Hurlシナリオの判断を記録。
+アプリケーションの既存バージョンを維持し、テスト用にHurlだけを追加する。
 
 ## Phase 1: Design & Contracts
 
@@ -70,13 +70,16 @@ specs/002-game-recruitment/
 ├── data-model.md
 ├── quickstart.md
 ├── contracts/README.md
-└── checklists/requirements.md
+├── checklists/requirements.md
+└── tasks.md
 schema/game-recruitment/
 ├── README.md
 └── openapi.yaml
+scripts/
+└── run-hurl-scenarios.sh              # contract DB初期化とHurl直列実行
 ```
 
-`tasks.md`は次の`$speckit-tasks`で作成する。
+`tasks.md`は作成済みであり、仕様・計画・契約との整合性を確認してから実装へ進む。
 
 ### Source Code (implementation targets)
 
@@ -108,6 +111,11 @@ frontend/src/App.tsx                   # 既存登録/ログインを保ち募�
 frontend/tests/recruitment.spec.ts
 frontend/tests/auth.spec.ts            # 認証の回帰
 tests/contract/test_recruitment_contract.py
+tests/scenarios/
+├── recruitment-lifecycle.hurl        # 登録から募集・参加・キャンセルまで
+├── recruitment-management.hurl       # 締切・再開・中止・合流情報
+├── errors-and-access.hurl             # 未認証・権限・状態エラー
+└── README.md                          # 固定版、変数、実行方法、秘密情報の扱い
 backend/src/test/resources/fixtures/reset_contract.sql
 backend/src/test/java/com/gamerecruitment/account/ApiTestSupport.java # FK追加後の共通初期化
 ```
@@ -121,7 +129,7 @@ backend/src/test/java/com/gamerecruitment/account/ApiTestSupport.java # FK追加
 3. **参加と合流情報（US3/4）**: ロック下の即時参加・キャンセル、重複/上限、private閲覧。
 4. **管理（US5）**: close/reopen/cancel/meeting更新。同一ロック下で現在の状態を再判定。
 5. **マイページ（US6）**: 作成/参加、開始前/過去の4区分。再表示で最新状態を読む。
-6. **結合と初期化（US7）**: 認証回帰、契約、ブラウザ、競合、初期化・手動検証。新FKに合わせ、既存ApiTestSupportのTRUNCATEも関連4表を同時に明示する。authだけの初期化でFKエラーを起こさない。
+6. **結合と初期化（US7）**: 認証回帰、Schemathesis契約検証、Hurlユーザーシナリオ、Playwright画面検証、競合、初期化・手動検証。新FKに合わせ、既存ApiTestSupportのTRUNCATEも関連4表を同時に明示する。authだけの初期化でFKエラーを起こさない。
 
 ## Transaction and Time Decisions
 
@@ -155,6 +163,15 @@ backend/src/test/java/com/gamerecruitment/account/ApiTestSupport.java # FK追加
 | FR-024・US7・SC-007 | 専用DB初期化SQL | 子→親→accountsの整合、同じIDで2回、通常APIなし、ゲーム固定一覧保持 |
 | SC-001/002/003/006 | 手動＋ブラウザシナリオ | 1分/5分/30秒と初見5人。実測前は未達成扱い |
 
+### Hurlのシナリオ設計
+
+- `@orangeopensource/hurl`を開発依存として固定し、package-lockへ実際の版を記録する。実装時に公式安定版とNode.js 22での動作を確認する。
+- Hurlファイルは`--test --no-cookie-store`で実行する。CSRF Cookie、raw CSRF token、HttpOnly auth_tokenを応答からcaptureし、募集者・参加者ごとのCookieを後続要求へ明示して、2人のログイン状態を混同しない。
+- `base_url`、衝突しないログインID、未来のJST日時は実行スクリプトから変数として渡す。Hurl内で現在日時を計算しない。
+- 作成応答から募集IDをJSONPathでcaptureし、一覧・詳細・参加・合流情報・キャンセル・締切・再開・中止へ引き継ぐ。
+- 各応答でHTTP status、`Cache-Control: no-store`、主要JSON値、人数、状態、閲覧権限をassertする。パスワード、JWT、CSRF値をファイル・レポート・共有ログへ保存しない。
+- シナリオごとに専用contract DBを初期化し、並列実行しない。Hurlは利用者の操作順を検証するもので、同時参加の検証はJava/Testcontainersに残す。
+
 ## Complexity Tracking
 
 憲章違反なし。行ロックは同時参加と状態操作の整合に必要。read portは一覧/結合結果の取得責務に必要な範囲で、CQRS製品や別read DBは導入しない。
@@ -162,4 +179,4 @@ backend/src/test/java/com/gamerecruitment/account/ApiTestSupport.java # FK追加
 ## Validation Status
 
 設計ゲートは通過。契約の静的確認結果は[契約ガイド](contracts/README.md)へ記録する。
-掲示板実装・実API契約・並列参加・ブラウザ検証は未実施。次は`$speckit-tasks`。
+掲示板実装・実API契約・並列参加・ブラウザ検証は未実施。`$speckit-tasks`と`$speckit-analyze`は完了し、分析で見つかった文書上の不整合を修正済み。次は計画文書を確定して実装へ進む。

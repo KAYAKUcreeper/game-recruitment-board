@@ -1,14 +1,14 @@
 # Feature Specification: ゲーム募集掲示板 初版（掲示板機能）
 
-**Feature Branch**: `3-specify作成`
+**Feature Branch**: `plan-game-recruitment`
 
 **Created**: 2026-09-26
 
-**Status**: Draft
+**Status**: Ready for Implementation
 
 **Input**: User description: 「その場で一緒に遊ぶ仲間を募集できる掲示板。会話で確定した募集、即時参加、キャンセル、締め切り、合流情報、マイページの要件を仕様化する。」
 
-**Updated**: 2026-10-10
+**Updated**: 2026-11-07
 
 **Dependency**: [アカウント仕様](../001-auth/spec.md)。登録・認証・表示名の入力条件は参照先を正本とし、本仕様は募集と参加のルールを管理する。
 

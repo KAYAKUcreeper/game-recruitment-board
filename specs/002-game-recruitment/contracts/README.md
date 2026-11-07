@@ -75,7 +75,9 @@ CurrentAccountFilter/SecurityConfigurationに保護経路を追加し、公開GE
 ## 検証状況
 
 設計時の静的検証結果をここへ追記する。Generatorのvalidate/生成成功は業務動作や実APIの合格を意味しない。
-実装後は[quickstart](../quickstart.md)に従い、Schemathesisと独立した振る舞いテストの両方を実行する。
+実装後は[quickstart](../quickstart.md)に従い、Schemathesisの契約検証、Hurlのユーザーシナリオ、独立した業務ルールテストを実行する。
+
+Hurlでは認証APIのCSRF取得・登録・ログインも含め、掲示板APIの操作を連結する。作成した募集ID、認証Cookie、CSRF値をcaptureして後続要求へ渡す。公開詳細に合流情報がないこと、参加後の人数、キャンセル後の権限、締切・再開・中止後の状態をassertする。
 
 
 ### 設計時の静的検証結果（2026-10-10）

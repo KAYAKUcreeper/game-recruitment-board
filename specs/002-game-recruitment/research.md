@@ -56,6 +56,15 @@
 - Alternatives considered: 新Generator/認証方式への移行、生成DTOをdomainへ持ち込む、拒否応答だけで契約検証を終える方式は不採用。
 - Sources: [Spring generator](https://openapi-generator.tech/docs/generators/spring/)、[Schemathesis checks](https://schemathesis.readthedocs.io/en/stable/reference/checks/)、[stateful検証](https://schemathesis.readthedocs.io/en/stable/guides/stateful-testing/)。
 
+## 8. Hurlによるユーザーシナリオ
+
+- Decision: 完成後のAPIレベルのユーザーシナリオはHurlで記述する。契約検証のSchemathesisと置き換えず、利用者の操作順と状態変化を担当させる。
+- Decision: Hurlのcookie storeは使わず、`--no-cookie-store`で実行する。応答のCookie/JSONPath captureとテンプレート変数を使い、募集者と参加者のauth_token、XSRF-TOKEN、raw CSRF token、募集IDを明示的に引き継ぐ。
+- Rationale: Hurlは同一ファイル内で要求を連結し、応答のCookie・JSON値をcaptureして後続要求に利用できる。複数利用者のCookieを明示すれば、募集者と参加者のセッションが自動cookie storeで上書きされるのを避けられる。
+- Decision: 現在日時の計算と一意ID生成は実行スクリプトで行い、Hurl変数として渡す。Hurlはstatus、header、JSONPath、Cookie属性をassertする。秘密値をレポートへ出さない。
+- Alternatives considered: curlを連ねたshellはassertとcaptureが読みにくい。HurlだけでOpenAPI全体を生成検証したり、実ブラウザ画面や同時実行を代替したりしない。
+- Sources: [Hurl response/capture](https://hurl.dev/docs/capturing-response.html)、[assert](https://hurl.dev/docs/asserting-response.html)、[templates](https://hurl.dev/docs/templates.html)、[test実行](https://hurl.dev/docs/running-tests.html)、[installation](https://hurl.dev/docs/installation.html)。
+
 ## 調査完了
 
 未解決のNEEDS CLARIFICATIONなし。時刻の成立判定点はspecのAssumptionsへ明記し、実装に先行して記録する。実装後の検証手順はquickstartに委ねる。
