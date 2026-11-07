@@ -127,6 +127,9 @@ SC-004/005/007は上の実DB・境界・初期化結果を記録する。
 - 存在しない募集の例外が認証側の汎用処理に捕捉され500になる不具合を検出し、掲示板の例外処理を優先して404へ修正。
 - `RecruitmentTransactionTest` 2件が成功。作成・参加・締め切り・キャンセルの保存、キャンセル後の合流情報拒否、例外による作成ロールバックを確認。
 - 掲示板全体の受け入れ、並列参加、Hurl、画面検証は未完了。
+- 追加検証: `RecruitmentDeadlineTest` 2件、`RecruitmentCommitTest` 1件、`DependencyTest` 1件、`PublicRecruitmentQueryTest` 2件が成功。処理途中の期限到達でのrollback、commit失敗の伝播、内向き依存、公開検索の絞り込み・ページング・人数整合性を確認。
+- 不正game/page/UUIDの型変換例外が500になっていたため、400 VALIDATION_ERRORへ変換する処理を追加。
+- `PublicRecruitmentContractTest` 3件が成功。ゲーム一覧、空一覧、不正query/UUID、404、公開JSONの秘密情報除外、21件のページングを確認。
 
 
 ## 設計時の検証結果（2026-10-10）

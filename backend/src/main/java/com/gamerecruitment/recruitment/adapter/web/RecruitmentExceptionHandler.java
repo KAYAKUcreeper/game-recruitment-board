@@ -10,6 +10,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Order(-1)
 public class RecruitmentExceptionHandler {
+  @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+  ResponseEntity<ApiErrorBody> invalidArgument(
+      org.springframework.web.method.annotation.MethodArgumentTypeMismatchException exception) {
+    return ResponseEntity.badRequest().body(new ApiErrorBody(
+        "VALIDATION_ERROR", "入力項目の形式を確認してください。", java.util.List.of(exception.getName())));
+  }
+
   @ExceptionHandler(RecruitmentFailure.class)
   ResponseEntity<ApiErrorBody> recruitment(RecruitmentFailure failure) {
     int status =

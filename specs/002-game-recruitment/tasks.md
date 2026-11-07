@@ -50,8 +50,8 @@
 - [X] T009 `backend/src/main/java/com/gamerecruitment/recruitment/application/RecruitmentFailure.java`と`backend/src/main/java/com/gamerecruitment/recruitment/adapter/web/RecruitmentExceptionHandler.java`を作り、掲示板専用code/fieldsを400/403/404/409へ変換する。`backend/src/main/java/com/gamerecruitment/shared/adapter/web/ApiErrorBody.java`へString code/message/fieldsの共通envelopeを置き、auth生成enumに掲示板値を渡さず既存auth契約を維持する。
 - [X] T010 `backend/src/main/java/com/gamerecruitment/account/adapter/security/CurrentAccountFilter.java`と`backend/src/main/java/com/gamerecruitment/configuration/SecurityConfiguration.java`をHTTPメソッド・URL単位で拡張し、`GET /api/games`と公開一覧/詳細は不正Cookieでも閲覧可能、合流情報GET・本人一覧GET・全掲示板POSTは既存JWT/失効/本人存在の認証必須、全POSTはCSRF/Origin必須とする。CSRF欠落は403、正しいCSRFで未認証は401、DB障害は503、全応答no-storeを維持する。
 - [X] T011 [P] `backend/src/test/java/com/gamerecruitment/recruitment/contract/RecruitmentSecurityContractTest.java`に公開GETのCookieなし/不正Cookie成功、private GET/POSTの401、CSRF/Originの403、失効照会503、auth APIの応答回帰、掲示板code/fieldsが500にならないことを先に実装する。
-- [ ] T012 `backend/src/main/java/com/gamerecruitment/recruitment/adapter/persistence/JdbcRecruitmentRepository.java`と`TransactionalRecruitmentCommands.java`にREAD COMMITTEDのTransactionTemplate、全変更で親行を最初に`SELECT ... FOR UPDATE`、lock後の別SQLで人数/本人参加を再読込、Clockのlock後/終了直前再評価、commit後成功を実装する。lock SQLへCOUNT/EXISTSを混ぜず、全経路を親行→参加行の順にする。
-- [ ] T013 `backend/src/main/java/com/gamerecruitment/configuration/RecruitmentConfiguration.java`で既存Clock、repository/query、command usecase、transaction decoratorを配線し、`backend/src/test/java/com/gamerecruitment/architecture/DependencyTest.java`へrecruitment domain/applicationからSpring/JDBC/adapter/configuration/generated型への依存禁止を追加する。
+- [X] T012 `backend/src/main/java/com/gamerecruitment/recruitment/adapter/persistence/JdbcRecruitmentRepository.java`と`TransactionalRecruitmentCommands.java`にREAD COMMITTEDのTransactionTemplate、全変更で親行を最初に`SELECT ... FOR UPDATE`、lock後の別SQLで人数/本人参加を再読込、Clockのlock後/終了直前再評価、commit後成功を実装する。lock SQLへCOUNT/EXISTSを混ぜず、全経路を親行→参加行の順にする。
+- [X] T013 `backend/src/main/java/com/gamerecruitment/configuration/RecruitmentConfiguration.java`で既存Clock、repository/query、command usecase、transaction decoratorを配線し、`backend/src/test/java/com/gamerecruitment/architecture/DependencyTest.java`へrecruitment domain/applicationからSpring/JDBC/adapter/configuration/generated型への依存禁止を追加する。
 
 **Checkpoint**: 生成、migration、domain、認証、共通エラー、更新transactionが利用可能。
 
@@ -65,14 +65,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T014 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/contract/PublicRecruitmentContractTest.java`にGET games/list/detailの200、game/page/UUID不正400、存在しない有効UUID404、20件＋hasNext、公開JSONにmeetingInfo/loginId/password/JWTが存在しないことを先に作る。
+- [X] T014 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/contract/PublicRecruitmentContractTest.java`にGET games/list/detailの200、game/page/UUID不正400、存在しない有効UUID404、20件＋hasNext、公開JSONにmeetingInfo/loginId/password/JWTが存在しないことを先に作る。
 - [ ] T015 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/integration/PublicRecruitmentQueryTest.java`にOPENのみ、startsAt/createdAt/id昇順、3ゲーム絞り込み、detailのparticipantCountとparticipants配列長一致、同時更新時も単一snapshotで矛盾しないことを実PostgreSQLで先に作る。
 - [ ] T016 [P] [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.test.tsx`と`RecruitmentDetailPage.test.tsx`に一覧、ゲーム絞り込み、次ページ、空、404、状態/参加者の表示、offset付き日時をAsia/Tokyoで表示する日付境界、外部JSONの未知/欠落/型違い拒否を先に作る。
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/persistence/JdbcRecruitmentQueries.java`に固定ゲーム、OPEN条件（cancelled=false、manual=false、startsAt>Clock、count<capacity）、20+1件、決定的順序、単一SQLの公開詳細/profile/参加者/countを実装する。
-- [ ] T018 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/web/PublicRecruitmentController.java`に生成`GamesApi`/`RecruitmentsApi`の公開GETを実装し、pageは1始まり、固定20、overflow防止、合流情報なしのDTO変換を行う。
+- [X] T017 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/persistence/JdbcRecruitmentQueries.java`に固定ゲーム、OPEN条件（cancelled=false、manual=false、startsAt>Clock、count<capacity）、20+1件、決定的順序、単一SQLの公開詳細/profile/参加者/countを実装する。
+- [X] T018 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/web/PublicRecruitmentController.java`に生成`GamesApi`/`RecruitmentsApi`の公開GETを実装し、pageは1始まり、固定20、overflow防止、合流情報なしのDTO変換を行う。
 - [ ] T019 [P] [US1] `frontend/src/features/recruitment/api/validation.ts`と`api/recruitments.ts`にGame、RecruitmentSummary/Detail/Pageのstrictな実行時検証と公開GET clientを実装する。
 - [ ] T020 [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.tsx`、`RecruitmentDetailPage.tsx`、`frontend/src/App.tsx`に`/`一覧、game選択、ページ移動、`/recruitments/:id`公開詳細、空/404/エラー表示を追加し、開始日時をAsia/Tokyoで、本文/表示名をプレーンテキストで表示する。
 
