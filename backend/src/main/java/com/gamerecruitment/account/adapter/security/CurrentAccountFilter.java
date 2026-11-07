@@ -27,7 +27,15 @@ public class CurrentAccountFilter extends OncePerRequestFilter {
   }
 
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    return !"/api/auth/me".equals(request.getRequestURI());
+    String uri = request.getRequestURI();
+    boolean protectedRecruitmentGet =
+        "GET".equals(request.getMethod())
+            && ("/api/me/recruitments".equals(uri) || uri.endsWith("/meeting-info"));
+    boolean protectedRecruitmentPost =
+        "POST".equals(request.getMethod()) && uri.startsWith("/api/recruitments");
+    return !"/api/auth/me".equals(uri)
+        && !protectedRecruitmentGet
+        && !protectedRecruitmentPost;
   }
 
   protected void doFilterInternal(

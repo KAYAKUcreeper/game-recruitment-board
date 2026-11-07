@@ -15,7 +15,11 @@ class DependencyTest {
         .should()
         .dependOnClassesThat()
         .resideInAnyPackage(
-            "org.springframework..", "java.sql..", "..adapter..", "..configuration..")
+            "org.springframework..",
+            "java.sql..",
+            "..adapter..",
+            "..configuration..",
+            "..generated..")
         .allowEmptyShould(true)
         .check(classes);
   }

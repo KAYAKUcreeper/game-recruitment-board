@@ -76,7 +76,7 @@ public abstract class ApiTestSupport {
   @BeforeEach
   void reset() {
     mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-    jdbc.execute("truncate revoked_tokens,accounts");
+    jdbc.execute("truncate participations,recruitments,revoked_tokens,accounts");
     clock.at(Instant.parse("2026-10-10T01:00:00Z"));
   }
 

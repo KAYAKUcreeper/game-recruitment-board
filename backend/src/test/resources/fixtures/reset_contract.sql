@@ -6,4 +6,4 @@ BEGIN
   END IF;
 END
 $$;
-TRUNCATE TABLE revoked_tokens, accounts;
+TRUNCATE TABLE participations, recruitments, revoked_tokens, accounts;

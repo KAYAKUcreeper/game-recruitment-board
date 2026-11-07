@@ -58,7 +58,7 @@ test_recruitment_contract.pyは実装時に作成。CSRF取得、複数の本人
 
 ### Hurlのユーザーシナリオ（実装後）
 
-HurlはAPI契約の生成検査ではなく、利用者の操作を順番に実行する最終シナリオテストに使用する。実装時に公式の安定版を`@orangeopensource/hurl`へ固定し、package-lockに記録する。
+HurlはAPI契約の生成検査ではなく、利用者の操作を順番に実行する最終シナリオテストに使用する。公式npmパッケージ`@orangeopensource/hurl` 8.1.0を開発依存としてpackage-lockに固定し、Node.js 22環境から実行する。
 
 実行スクリプトは、専用contract DBを初期化してから、衝突しないIDと未来のJST日時を変数として渡す。概念上の実行は次の形とする。
 
@@ -118,7 +118,15 @@ npm --prefix frontend run test:e2e
 SC-001検索1分、SC-002登録〜公開5分、SC-003参加〜合流情報30秒、SC-006初見5人中4人は実測する。
 未実施は未実施として記録。自動テスト時間や設計完成を達成結果に置き換えない。
 SC-004/005/007は上の実DB・境界・初期化結果を記録する。
-契約の構文/生成、実APIの契約、業務動作、手動受け入れを区別する。現時点で掲示板実装のテスト結果はない。
+契約の構文/生成、実APIの契約、業務動作、手動受け入れを区別する。部分的な実装検証結果は以下に記録する。
+
+## 実装中の検証結果（2026-11-07）
+
+- TestcontainersのPostgreSQL 18.4へFlyway V1〜V4を適用して成功。開発DBは使用しない。
+- `RecruitmentSecurityContractTest` 4件と`AuthenticationContractTest` 2件が成功。公開GETの不正Cookie許容、private GET/POSTの401、CSRF/Originの403、失効DB障害の503を確認。
+- 存在しない募集の例外が認証側の汎用処理に捕捉され500になる不具合を検出し、掲示板の例外処理を優先して404へ修正。
+- `RecruitmentTransactionTest` 2件が成功。作成・参加・締め切り・キャンセルの保存、キャンセル後の合流情報拒否、例外による作成ロールバックを確認。
+- 掲示板全体の受け入れ、並列参加、Hurl、画面検証は未完了。
 
 
 ## 設計時の検証結果（2026-10-10）

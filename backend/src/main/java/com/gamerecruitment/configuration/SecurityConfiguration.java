@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CsrfFilter;
 import tools.jackson.databind.ObjectMapper;
@@ -31,6 +32,19 @@ public class SecurityConfiguration {
             a ->
                 a.requestMatchers("/api/auth/me")
                     .authenticated()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/me/recruitments",
+                        "/api/recruitments/{recruitmentId}/meeting-info")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.POST, "/api/recruitments", "/api/recruitments/**")
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/games",
+                        "/api/recruitments",
+                        "/api/recruitments/{recruitmentId}")
+                    .permitAll()
                     .requestMatchers(
                         "/api/accounts", "/api/auth/csrf", "/api/auth/login", "/api/auth/logout")
                     .permitAll()
