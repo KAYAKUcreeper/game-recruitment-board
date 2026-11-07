@@ -21,6 +21,7 @@ nav {
 a {
   color: #245ca5;
 }
+.recruitment-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 form {
   display: grid;
   gap: 18px;

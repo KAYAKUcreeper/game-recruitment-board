@@ -66,15 +66,15 @@
 ### Tests for User Story 1
 
 - [X] T014 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/contract/PublicRecruitmentContractTest.java`にGET games/list/detailの200、game/page/UUID不正400、存在しない有効UUID404、20件＋hasNext、公開JSONにmeetingInfo/loginId/password/JWTが存在しないことを先に作る。
-- [ ] T015 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/integration/PublicRecruitmentQueryTest.java`にOPENのみ、startsAt/createdAt/id昇順、3ゲーム絞り込み、detailのparticipantCountとparticipants配列長一致、同時更新時も単一snapshotで矛盾しないことを実PostgreSQLで先に作る。
-- [ ] T016 [P] [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.test.tsx`と`RecruitmentDetailPage.test.tsx`に一覧、ゲーム絞り込み、次ページ、空、404、状態/参加者の表示、offset付き日時をAsia/Tokyoで表示する日付境界、外部JSONの未知/欠落/型違い拒否を先に作る。
+- [X] T015 [P] [US1] `backend/src/test/java/com/gamerecruitment/recruitment/integration/PublicRecruitmentQueryTest.java`にOPENのみ、startsAt/createdAt/id昇順、3ゲーム絞り込み、detailのparticipantCountとparticipants配列長一致、同時更新時も単一snapshotで矛盾しないことを実PostgreSQLで先に作る。
+- [X] T016 [P] [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.test.tsx`と`RecruitmentDetailPage.test.tsx`に一覧、ゲーム絞り込み、次ページ、空、404、状態/参加者の表示、offset付き日時をAsia/Tokyoで表示する日付境界、外部JSONの未知/欠落/型違い拒否を先に作る。
 
 ### Implementation for User Story 1
 
 - [X] T017 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/persistence/JdbcRecruitmentQueries.java`に固定ゲーム、OPEN条件（cancelled=false、manual=false、startsAt>Clock、count<capacity）、20+1件、決定的順序、単一SQLの公開詳細/profile/参加者/countを実装する。
 - [X] T018 [US1] `backend/src/main/java/com/gamerecruitment/recruitment/adapter/web/PublicRecruitmentController.java`に生成`GamesApi`/`RecruitmentsApi`の公開GETを実装し、pageは1始まり、固定20、overflow防止、合流情報なしのDTO変換を行う。
-- [ ] T019 [P] [US1] `frontend/src/features/recruitment/api/validation.ts`と`api/recruitments.ts`にGame、RecruitmentSummary/Detail/Pageのstrictな実行時検証と公開GET clientを実装する。
-- [ ] T020 [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.tsx`、`RecruitmentDetailPage.tsx`、`frontend/src/App.tsx`に`/`一覧、game選択、ページ移動、`/recruitments/:id`公開詳細、空/404/エラー表示を追加し、開始日時をAsia/Tokyoで、本文/表示名をプレーンテキストで表示する。
+- [X] T019 [P] [US1] `frontend/src/features/recruitment/api/validation.ts`と`api/recruitments.ts`にGame、RecruitmentSummary/Detail/Pageのstrictな実行時検証と公開GET clientを実装する。
+- [X] T020 [US1] `frontend/src/features/recruitment/pages/RecruitmentListPage.tsx`、`RecruitmentDetailPage.tsx`、`frontend/src/App.tsx`に`/`一覧、game選択、ページ移動、`/recruitments/:id`公開詳細、空/404/エラー表示を追加し、開始日時をAsia/Tokyoで、本文/表示名をプレーンテキストで表示する。
 
 **Checkpoint**: US1だけで未ログイン利用者が募集を検索・閲覧できる。
 

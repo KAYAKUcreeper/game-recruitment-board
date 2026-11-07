@@ -130,6 +130,8 @@ SC-004/005/007は上の実DB・境界・初期化結果を記録する。
 - 追加検証: `RecruitmentDeadlineTest` 2件、`RecruitmentCommitTest` 1件、`DependencyTest` 1件、`PublicRecruitmentQueryTest` 2件が成功。処理途中の期限到達でのrollback、commit失敗の伝播、内向き依存、公開検索の絞り込み・ページング・人数整合性を確認。
 - 不正game/page/UUIDの型変換例外が500になっていたため、400 VALIDATION_ERRORへ変換する処理を追加。
 - `PublicRecruitmentContractTest` 3件が成功。ゲーム一覧、空一覧、不正query/UUID、404、公開JSONの秘密情報除外、21件のページングを確認。
+- US1公開検索: Reactの一覧・詳細画面、絞り込み・ページ移動・再表示・空/404表示、JST表示、プレーンテキスト表示とAPI応答の実行時検証を追加。frontend typecheck、Vitest全23件、本番buildが成功。
+- `PublicRecruitmentQueryTest`を4件へ拡張し成功。同じ開始日時のcreated_at/id順、全3ゲームの絞り込み、参加の同時更新中も公開詳細のcountと配列長が一致することを確認。ブラウザE2Eと手動時間目標は未実施。
 
 
 ## 設計時の検証結果（2026-10-10）

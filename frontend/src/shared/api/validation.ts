@@ -66,6 +66,17 @@ export function apiError(v: unknown): ApiErrorBody {
     "INVALID_CREDENTIALS",
     "ALREADY_AUTHENTICATED",
     "METHOD_NOT_ALLOWED",
+    "RECRUITMENT_NOT_FOUND",
+    "NOT_OWNER",
+    "MEETING_INFO_FORBIDDEN",
+    "OWN_RECRUITMENT",
+    "ALREADY_PARTICIPATING",
+    "NOT_PARTICIPATING",
+    "RECRUITMENT_FULL",
+    "RECRUITMENT_CLOSED",
+    "RECRUITMENT_CANCELLED",
+    "RECRUITMENT_STARTED",
+    "NOT_MANUALLY_CLOSED",
   ];
   if (
     !object(v) ||
@@ -78,7 +89,7 @@ export function apiError(v: unknown): ApiErrorBody {
     !v.fields.every(
       (f) =>
         typeof f === "string" &&
-        ["loginId", "password", "displayName"].includes(f),
+        ["loginId", "password", "displayName", "game", "title", "description", "startsAt", "capacity", "meetingInfo", "recruitmentId", "page", "kind", "period"].includes(f),
     ) ||
     new Set(v.fields).size !== v.fields.length
   )
