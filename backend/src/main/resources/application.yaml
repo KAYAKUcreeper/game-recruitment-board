@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: game-recruitment-board
+  servlet:
+    multipart:
+      enabled: false
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+app:
+  jwt-secret-base64: ${APP_JWT_SECRET_BASE64}
+  allowed-origin: ${APP_ALLOWED_ORIGIN:https://localhost}
+  secure-cookies: true
+server:
+  error:
+    include-message: never
+    include-stacktrace: never

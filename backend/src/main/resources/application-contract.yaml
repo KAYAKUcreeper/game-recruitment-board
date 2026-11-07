@@ -1,0 +1,6 @@
+server:
+  address: 127.0.0.1
+  port: 8081
+app:
+  allowed-origin: http://localhost:5174
+  secure-cookies: false
